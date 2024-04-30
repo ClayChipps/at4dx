@@ -28,7 +28,7 @@
 private class ApplicationSObjectSelectorTest
 {
     @IsTest
-    private static void testInheritedSharingSelectorInheritedSharingInjectableWithSharingController() {
+    private static void testInheritedSharingSelector_InheritedSharingInjectable_WithSharingController() {
         ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
             new List<ApplicationFactory_SelectorBinding__mdt> {
                 new ApplicationFactory_SelectorBinding__mdt(
@@ -72,7 +72,7 @@ private class ApplicationSObjectSelectorTest
     }
 
     @IsTest
-    private static void testInheritedSharingSelectorInheritedSharingInjectableWithoutSharingController() {
+    private static void testInheritedSharingSelector_InheritedSharingInjectable_WithoutSharingController() {
         ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
             new List<ApplicationFactory_SelectorBinding__mdt> {
                 new ApplicationFactory_SelectorBinding__mdt(
@@ -116,7 +116,7 @@ private class ApplicationSObjectSelectorTest
     }
 
     @IsTest
-    private static void testInheritedSharingSelectorWithoutSharingInjectableWithoutSharingController() {
+    private static void testInheritedSharingSelector_WithoutSharingInjectable_WithoutSharingController() {
         ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
             new List<ApplicationFactory_SelectorBinding__mdt> {
                 new ApplicationFactory_SelectorBinding__mdt(
@@ -159,6 +159,50 @@ private class ApplicationSObjectSelectorTest
         }
     }
 
+    @IsTest
+    private static void testWithoutSharingSelector_InheritedSharingInjectable_WithoutSharingController() {
+        ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
+            new List<ApplicationFactory_SelectorBinding__mdt> {
+                new ApplicationFactory_SelectorBinding__mdt(
+                    BindingSObjectAlternate__c = 'Account',
+                    To__c = 'ApplicationSObjectSelectorTest.TestAccountsSelectorWithoutSharing'  
+                )
+            }
+        );
+        
+        Application.Selector.setMock(new TestAccountsSelectorWithoutSharing());
+
+        Account testAccount = new Account(
+            Name = 'A Test Account',
+            AccountNumber = '123456'
+        );
+
+        insert testAccount;
+
+        User testUser = new User(
+            Alias = 'standt',
+            Email = 'standarduser@testorg.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Testing',
+            LanguageLocaleKey = 'en_US',
+            LocaleSidKey = 'en_US',
+            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1].Id,
+            TimeZoneSidKey = 'America/Los_Angeles',
+            Username = 'at4dxwizard@gooble.com'
+        );
+
+        insert testUser;
+
+        System.runAs(testUser) {
+            List<Account> accounts = new ControllerWithoutSharing().selectAccountsByNumberWith(
+                'ApplicationSObjectSelectorTest.TestSelectorMethodInheritedSharing', 
+                new Set<string>{ '123456' }
+            );
+
+            System.Assert.areEqual(1, accounts.size());
+        }
+    }
+
     public inherited sharing class ControllerInheritedSharing {
         public List<Account> selectAccountsByNumberWith(String injectableClazz, Set<String> accountNumberSet) {
             IApplicationSObjectSelector selector = Application.Selector.newInstance(Account.getSObjectType());
@@ -189,6 +233,46 @@ private class ApplicationSObjectSelectorTest
         }
     }
 
+    public abstract inherited sharing class InheritedBaseSelector
+        extends ApplicationSObjectSelector
+    {
+        public override List<SObject> selectInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
+        {
+            if ( methodClazzType == null )
+            {
+                throw new ApplicationSObjectSelector.ApplicationSObjectSelectorException('methodClazz cannot be null');
+            }
+    
+            try 
+            {
+                ISelectorMethodInjectable injectionQueryClazz = (ISelectorMethodInjectable)methodClazzType.newInstance();
+    
+                if ( injectionQueryClazz instanceOf ISelectorMethodSetable)
+                {
+                    ISelectorMethodSetable selectorMethodSetterClazz = (ISelectorMethodSetable)injectionQueryClazz;
+                    if (params != null)
+                    {
+                        selectorMethodSetterClazz.setParameters( params );
+                    }
+                    
+                    selectorMethodSetterClazz.setQueryFactory(newQueryFactory());
+                }
+                
+                return injectionQueryClazz.selectQuery();
+            }
+            catch (System.TypeException te)
+            {
+                System.debug(LoggingLevel.ERROR, te);
+                throw new ApplicationSObjectSelectorException('Parameter methodClazzType of type \'' + methodClazzType.getName() + '\' does not implement the interface \'' + ISelectorMethodInjectable.class.getName() + '\'');
+            }
+            catch (System.Exception e)
+            {
+                System.debug(LoggingLevel.ERROR, e);
+                throw new ApplicationSObjectSelectorException(e);
+            }
+        }
+    }
+
     public interface ITestAccountsSelector
         extends IApplicationSObjectSelector
     {
@@ -197,7 +281,7 @@ private class ApplicationSObjectSelectorTest
 
     @TestVisible
     public inherited sharing class TestAccountsSelectorInheritedSharing
-        extends ApplicationSObjectSelector
+        extends InheritedBaseSelector
         implements ITestAccountsSelector
     {
         public Schema.sObjectType getSObjectType()
@@ -218,7 +302,7 @@ private class ApplicationSObjectSelectorTest
     
     @TestVisible
     public with sharing class TestAccountsSelectorWithSharing
-        extends ApplicationSObjectSelector
+        extends InheritedBaseSelector
         implements ITestAccountsSelector
     {
         public Schema.sObjectType getSObjectType()
@@ -239,7 +323,7 @@ private class ApplicationSObjectSelectorTest
     
     @TestVisible
     public without sharing class TestAccountsSelectorWithoutSharing
-        extends ApplicationSObjectSelector
+        extends InheritedBaseSelector
         implements ITestAccountsSelector
     {
         public Schema.sObjectType getSObjectType()

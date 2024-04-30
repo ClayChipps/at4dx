@@ -151,7 +151,7 @@ public abstract class ApplicationSObjectSelector
         return newQueryFactory().setCondition('id in :idSet').toSOQL();
     }
 
-    public List<SObject> selectInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
+    public virtual List<SObject> selectInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
     {
         if ( methodClazzType == null )
         {
@@ -187,7 +187,7 @@ public abstract class ApplicationSObjectSelector
         }
     }
 
-    public Database.QueryLocator selectQueryLocatorInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
+    public virtual Database.QueryLocator selectQueryLocatorInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
     {
         if ( methodClazzType == null )
         {
