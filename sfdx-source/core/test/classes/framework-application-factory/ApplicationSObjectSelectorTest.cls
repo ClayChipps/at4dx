@@ -28,73 +28,165 @@
 private class ApplicationSObjectSelectorTest
 {
     @IsTest
-    private static void getSObjectFieldListTest()
-    {
-        configureSelectors();
+    private static void testInheritedSharingSelectorInheritedSharingInjectableWithSharingController() {
+        ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
+            new List<ApplicationFactory_SelectorBinding__mdt> {
+                new ApplicationFactory_SelectorBinding__mdt(
+                    BindingSObjectAlternate__c = 'Account',
+                    To__c = 'ApplicationSObjectSelectorTest.TestAccountsSelectorInheritedSharing'  
+                )
+            }
+        );
+        
+        Application.Selector.setMock(new TestAccountsSelectorInheritedSharing());
 
-        TestAccountsSelector sel = (TestAccountsSelector) Application.Selector.newInstance(Account.SObjectType);
-        List<SObjectField> fieldList = sel.getSObjectFieldList();
+        Account testAccount = new Account(
+            Name = 'A Test Account',
+            AccountNumber = '123456'
+        );
 
-        System.Assert.isNotNull(fieldList);
-        System.Assert.isFalse(fieldList.isEmpty());
-    }
+        insert testAccount;
 
-    @IsTest
-    private static void selectionInjectionTest()
-    {
-        configureSelectors();
+        User testUser = new User(
+            Alias = 'standt',
+            Email = 'standarduser@testorg.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Testing',
+            LanguageLocaleKey = 'en_US',
+            LocaleSidKey = 'en_US',
+            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1].Id,
+            TimeZoneSidKey = 'America/Los_Angeles',
+            Username = 'at4dxwizard@gooble.com'
+        );
 
-        TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
-        queryParams.accountNumberSet = new Set<String>{ '123456' };
+        insert testUser;
 
-        TestAccountsSelector sel = (TestAccountsSelector) Application.Selector.newInstance(Account.SObjectType);
-        List<Account> accountList = sel.selectInjection(TestSelectorMethod.class, queryParams);
+        System.runAs(testUser) {
+            List<Account> accounts = new ControllerWithSharing().selectAccountsByNumberWith(
+                'ApplicationSObjectSelectorTest.TestSelectorMethodInheritedSharing', 
+                new Set<string>{ '123456' }
+            );
 
-        System.Assert.isNotNull(accountList);
-        System.Assert.isTrue(accountList.isEmpty());
-    }
-
-    private static void configureSelectors()
-    {
-        ApplicationFactory_SelectorBinding__mdt accountsSelectorBinding = new ApplicationFactory_SelectorBinding__mdt();
-        accountsSelectorBinding.BindingSObjectAlternate__c = 'Account';
-        accountsSelectorBinding.To__c = 'ApplicationSObjectSelectorTest.TestAccountsSelector';
-
-        ApplicationFactory_SelectorBinding__mdt contactsSelectorBinding = new ApplicationFactory_SelectorBinding__mdt();
-        contactsSelectorBinding.BindingSObjectAlternate__c = 'Contact';
-        contactsSelectorBinding.To__c = 'ApplicationSObjectSelectorTest.TestContactsSelector';
-
-        List<ApplicationFactory_SelectorBinding__mdt> bindingList = new List<ApplicationFactory_SelectorBinding__mdt>
-        {
-            accountsSelectorBinding,
-            contactsSelectorBinding
-        };
-
-        ApplicationSObjectSelectorDIModule.bindingRecords.addAll(bindingList);
-
-        // override the selector bindings just in case this method
-        //  executes in an org that already has an AccountsSelector.
-        Application.Selector.setMock(new TestAccountsSelector());
-    }
-
-    public class TestSelectorMethod
-        extends AbstractSelectorMethodInjectable
-        implements ISelectorMethodInjectable
-    {
-        public List<SObject> selectQuery()
-        {
-            TestSelectorMethodParameters params = (TestSelectorMethodParameters) getParams();
-
-            Set<String> accountNumberSet = params.accountNumberSet;
-
-            return Database.query( newQueryFactory().setCondition( Account.AccountNumber + ' in :accountNumberSet').toSOQL() );
+            System.Assert.areEqual(0, accounts.size());
         }
     }
 
-    public class TestSelectorMethodParameters
-        implements ISelectorMethodParameterable
-    {
-        public Set<String> accountNumberSet;
+    @IsTest
+    private static void testInheritedSharingSelectorInheritedSharingInjectableWithoutSharingController() {
+        ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
+            new List<ApplicationFactory_SelectorBinding__mdt> {
+                new ApplicationFactory_SelectorBinding__mdt(
+                    BindingSObjectAlternate__c = 'Account',
+                    To__c = 'ApplicationSObjectSelectorTest.TestAccountsSelectorInheritedSharing'  
+                )
+            }
+        );
+        
+        Application.Selector.setMock(new TestAccountsSelectorInheritedSharing());
+
+        Account testAccount = new Account(
+            Name = 'A Test Account',
+            AccountNumber = '123456'
+        );
+
+        insert testAccount;
+
+        User testUser = new User(
+            Alias = 'standt',
+            Email = 'standarduser@testorg.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Testing',
+            LanguageLocaleKey = 'en_US',
+            LocaleSidKey = 'en_US',
+            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1].Id,
+            TimeZoneSidKey = 'America/Los_Angeles',
+            Username = 'at4dxwizard@gooble.com'
+        );
+
+        insert testUser;
+
+        System.runAs(testUser) {
+            List<Account> accounts = new ControllerWithoutSharing().selectAccountsByNumberWith(
+                'ApplicationSObjectSelectorTest.TestSelectorMethodInheritedSharing', 
+                new Set<string>{ '123456' }
+            );
+
+            System.Assert.areEqual(1, accounts.size());
+        }
+    }
+
+    @IsTest
+    private static void testInheritedSharingSelectorWithoutSharingInjectableWithoutSharingController() {
+        ApplicationSObjectSelectorDIModule.bindingRecords.addAll(
+            new List<ApplicationFactory_SelectorBinding__mdt> {
+                new ApplicationFactory_SelectorBinding__mdt(
+                    BindingSObjectAlternate__c = 'Account',
+                    To__c = 'ApplicationSObjectSelectorTest.TestAccountsSelectorInheritedSharing'  
+                )
+            }
+        );
+        
+        Application.Selector.setMock(new TestAccountsSelectorInheritedSharing());
+
+        Account testAccount = new Account(
+            Name = 'A Test Account',
+            AccountNumber = '123456'
+        );
+
+        insert testAccount;
+
+        User testUser = new User(
+            Alias = 'standt',
+            Email = 'standarduser@testorg.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Testing',
+            LanguageLocaleKey = 'en_US',
+            LocaleSidKey = 'en_US',
+            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1].Id,
+            TimeZoneSidKey = 'America/Los_Angeles',
+            Username = 'at4dxwizard@gooble.com'
+        );
+
+        insert testUser;
+
+        System.runAs(testUser) {
+            List<Account> accounts = new ControllerWithoutSharing().selectAccountsByNumberWith(
+                'ApplicationSObjectSelectorTest.TestSelectorMethodWithoutSharing', 
+                new Set<string>{ '123456' }
+            );
+
+            System.Assert.areEqual(1, accounts.size());
+        }
+    }
+
+    public inherited sharing class ControllerInheritedSharing {
+        public List<Account> selectAccountsByNumberWith(String injectableClazz, Set<String> accountNumberSet) {
+            IApplicationSObjectSelector selector = Application.Selector.newInstance(Account.getSObjectType());
+            TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
+            queryParams.accountNumberSet = new Set<string>{ '123456' };
+
+            return (List<Account>) selector.selectInjection(Type.forName(injectableClazz), queryParams);
+        }
+    }
+
+    public with sharing class ControllerWithSharing {
+        public List<Account> selectAccountsByNumberWith(String injectableClazz, Set<String> accountNumberSet) {
+            IApplicationSObjectSelector selector = Application.Selector.newInstance(Account.getSObjectType());
+            TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
+            queryParams.accountNumberSet = new Set<string>{ '123456' };
+
+            return (List<Account>) selector.selectInjection(Type.forName(injectableClazz), queryParams);
+        }
+    }
+
+    public without sharing class ControllerWithoutSharing {
+        public List<Account> selectAccountsByNumberWith(String injectableClazz, Set<String> accountNumberSet) {
+            IApplicationSObjectSelector selector = Application.Selector.newInstance(Account.getSObjectType());
+            TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
+            queryParams.accountNumberSet = new Set<string>{ '123456' };
+
+            return (List<Account>) selector.selectInjection(Type.forName(injectableClazz), queryParams);
+        }
     }
 
     public interface ITestAccountsSelector
@@ -104,7 +196,7 @@ private class ApplicationSObjectSelectorTest
     }
 
     @TestVisible
-    public class TestAccountsSelector 
+    public inherited sharing class TestAccountsSelectorInheritedSharing
         extends ApplicationSObjectSelector
         implements ITestAccountsSelector
     {
@@ -120,7 +212,97 @@ private class ApplicationSObjectSelectorTest
 
         public List<Account> selectById(Set<Id> idSet)
         {
-            return (List<Account>) selectSObjectsById( idSet == null ? new Set<Id>() : idSet );
+            return (List<Account>) selectSObjectsById( idSet ?? new Set<Id>() );
+        }
+    }
+    
+    @TestVisible
+    public with sharing class TestAccountsSelectorWithSharing
+        extends ApplicationSObjectSelector
+        implements ITestAccountsSelector
+    {
+        public Schema.sObjectType getSObjectType()
+        {
+            return Account.SObjectType;
+        }
+
+        private List<Schema.SObjectField> getAdditionalSObjectFieldList()
+        {
+            return new List<Schema.SObjectField> { };
+        }
+
+        public List<Account> selectById(Set<Id> idSet)
+        {
+            return (List<Account>) selectSObjectsById( idSet ?? new Set<Id>() );
+        }
+    }
+    
+    @TestVisible
+    public without sharing class TestAccountsSelectorWithoutSharing
+        extends ApplicationSObjectSelector
+        implements ITestAccountsSelector
+    {
+        public Schema.sObjectType getSObjectType()
+        {
+            return Account.SObjectType;
+        }
+
+        private List<Schema.SObjectField> getAdditionalSObjectFieldList()
+        {
+            return new List<Schema.SObjectField> { };
+        }
+
+        public List<Account> selectById(Set<Id> idSet)
+        {
+            return (List<Account>) selectSObjectsById( idSet ?? new Set<Id>() );
+        }
+    }
+
+    public class TestSelectorMethodParameters
+        implements ISelectorMethodParameterable
+    {
+        public Set<String> accountNumberSet;
+    }
+
+    public inherited sharing class TestSelectorMethodInheritedSharing
+        extends AbstractSelectorMethodInjectable
+        implements ISelectorMethodInjectable
+    {
+        public List<SObject> selectQuery()
+        {
+            TestSelectorMethodParameters queryParams = (TestSelectorMethodParameters) getParameters();
+
+            Set<String> accountNumberSet = queryParams.accountNumberSet;
+
+            return Database.query( newQueryFactory().setCondition( Account.AccountNumber + ' in :accountNumberSet').toSOQL() );
+        }
+    }
+
+    public with sharing class TestSelectorMethodWithSharing
+        extends AbstractSelectorMethodInjectable
+        implements ISelectorMethodInjectable
+    {
+        public List<SObject> selectQuery()
+        {
+            TestSelectorMethodParameters queryParams = (TestSelectorMethodParameters) getParameters();
+
+            Set<String> accountNumberSet = queryParams.accountNumberSet;
+
+            return Database.query( newQueryFactory().setCondition( Account.AccountNumber + ' in :accountNumberSet').toSOQL() );
+        }
+    }
+
+    public without sharing class TestSelectorMethodWithoutSharing
+        extends AbstractSelectorMethodInjectable
+        implements ISelectorMethodInjectable
+    {
+        public List<SObject> selectQuery()
+        {
+            TestSelectorMethodParameters queryParams = (TestSelectorMethodParameters) getParameters();
+
+            Set<String> accountNumberSet = queryParams.accountNumberSet;
+
+            return Database.query( newQueryFactory().setCondition( Account.AccountNumber + ' in :accountNumberSet').toSOQL() );
         }
     }
 }
