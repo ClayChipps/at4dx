@@ -27,7 +27,7 @@
 private class AbstractSelectorShareableInjectableTest
 {
     @IsTest
-    private static void verifyAbstractSelectorMethodInjection() 
+    private static void verifyAbstractSelectorShareableInjection() 
     {
         // Given
         String keyName = 'fishy';
@@ -55,11 +55,11 @@ private class AbstractSelectorShareableInjectableTest
         System.Assert.areEqual( keyName, acctToCheck.Name, 'Account Name Not Equal' );
     }
 
-    private class SelectByNameSelectorMethod
-        extends AbstractSelectorMethodInjectable
+    private class SelectByNameSelectorShareable
+        extends AbstractSelectorShareableInjectable
         implements ISelectorMethodInjectable
     {
-        public List<SObject> selectQuery()
+        public override List<SObject> executeQuery()
         {
             Parameters params = (Parameters)getParams(); 
             
