@@ -198,6 +198,11 @@ public abstract class ApplicationSObjectSelector
         }
     }
 
+    public List<SObject> selectInjection( System.Type methodClazzType, ISelectorMethodParameterable params, Boolean withSharing)
+    {
+        return withSharing ? (new ApplicationSObjectSelectorWithSharing()).selectInjection(this, methodClazzType, params) : (new ApplicationSObjectSelectorWithoutSharing()).selectInjection(this, methodClazzType, params);
+    }
+
     public Database.QueryLocator selectQueryLocatorInjection( System.Type methodClazzType, ISelectorMethodParameterable params )
     {
         if ( methodClazzType == null )
@@ -238,5 +243,21 @@ public abstract class ApplicationSObjectSelector
         extends Exception
     {
 
+    }
+
+    private class ApplicationSObjectSelectorWithSharing
+    {
+        public List<SObject> selectInjection( ApplicationSObjectSelector selector, System.Type methodClazzType, ISelectorMethodParameterable params )
+        {
+            return selector.selectInjection(methodClazzType, params);
+        }
+    }
+
+    private class ApplicationSObjectSelectorWithoutSharing
+    {
+        public List<SObject> selectInjection( ApplicationSObjectSelector selector, System.Type methodClazzType, ISelectorMethodParameterable params )
+        {
+            return selector.selectInjection(methodClazzType, params);
+        }
     }
 }

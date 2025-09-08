@@ -55,6 +55,36 @@ private class ApplicationSObjectSelectorTest
     }
 
     @IsTest
+    private static void selectionInjectionWithSharingTest()
+    {
+        configureSelectors();
+
+        TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
+        queryParams.accountNumberSet = new Set<String>{ '123456' };
+
+        TestAccountsSelector sel = (TestAccountsSelector) Application.Selector.newInstance(Account.SObjectType);
+        List<Account> accountList = sel.selectInjection(TestSelectorMethod.class, queryParams, true);
+
+        System.Assert.isNotNull(accountList);
+        System.Assert.isTrue(accountList.isEmpty());
+    }
+
+    @IsTest
+    private static void selectionInjectionWithoutSharingTest()
+    {
+        configureSelectors();
+
+        TestSelectorMethodParameters queryParams = new TestSelectorMethodParameters();
+        queryParams.accountNumberSet = new Set<String>{ '123456' };
+
+        TestAccountsSelector sel = (TestAccountsSelector) Application.Selector.newInstance(Account.SObjectType);
+        List<Account> accountList = sel.selectInjection(TestSelectorMethod.class, queryParams, false);
+
+        System.Assert.isNotNull(accountList);
+        System.Assert.isTrue(accountList.isEmpty());
+    }
+
+    @IsTest
     private static void testConstructors()
     {
         TestAccountsSelector defaultConstructor = new TestAccountsSelector();
